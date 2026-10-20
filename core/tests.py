@@ -60,3 +60,41 @@ class WritingAnalysisEndpointTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["error"]["code"], "invalid_json")
+
+    def test_rejects_non_object_json_payload(self):
+        response = self.client.post(
+            "/api/writing/analyze/",
+            data=json.dumps(["not", "an", "object"]),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "invalid_payload")
+
+    def test_returns_no_errors_for_unrecognized_patterns(self):
+        response = self.client.post(
+            "/api/writing/analyze/",
+            data=json.dumps({"text": "The weather is nice today."}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["error_count"], 0)
+        self.assertEqual(response.json()["errors"], [])
+
+    def test_returns_multiple_issues_in_text_order(self):
+        text = "He go to school. I am agree."
+        response = self.client.post(
+            "/api/writing/analyze/",
+            data=json.dumps({"text": text}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["error_count"], 2)
+        self.assertEqual(
+            [issue["suggestion"] for issue in body["errors"]],
+            ["He goes", "I agree"],
+        )
+        self.assertEqual(
+            [issue["start"] for issue in body["errors"]],
+            sorted(issue["start"] for issue in body["errors"]),
+        )
