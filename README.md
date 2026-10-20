@@ -14,7 +14,7 @@ The repository is being built incrementally. The first backend foundation provid
 ## Run locally (macOS)
 
 ```bash
-git clone https://github.com/SoheilAbdollahii/english-learning.git
+git clone --branch feature/backend-foundation https://github.com/SoheilAbdollahii/english-learning.git
 cd english-learning
 python3 -m venv .venv
 source .venv/bin/activate
