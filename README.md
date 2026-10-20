@@ -54,6 +54,10 @@ The default local database is SQLite. PostgreSQL can be configured with `DATABAS
 - The writing endpoint accepts unauthenticated text and is a development prototype; do not send sensitive writing.
 - The health endpoint is public and does not return user or database information.
 
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for production environment requirements and the pre-launch checklist. No production deployment is configured yet.
+
 ## Quality checks
 
 GitHub Actions runs the backend checks (`python manage.py check` and `python manage.py test`) and frontend checks (`npm run lint` and `npm run build`) on pushes and pull requests targeting `main` or `feature/backend-foundation`.
