@@ -2,11 +2,24 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "local-only-insecure-key-change-before-deploy")
+DEVELOPMENT_SECRET_KEY = "local-only-insecure-key-change-before-deploy"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", DEVELOPMENT_SECRET_KEY)
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in {"1", "true", "yes"}
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()]
+
+# Fail closed instead of accidentally starting an unsafe production configuration.
+if not DEBUG:
+    if SECRET_KEY == DEVELOPMENT_SECRET_KEY:
+        raise ImproperlyConfigured(
+            "Set DJANGO_SECRET_KEY to a unique, secret value when DJANGO_DEBUG=False."
+        )
+    if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
+        raise ImproperlyConfigured(
+            "Set DJANGO_ALLOWED_HOSTS to explicit hostnames when DJANGO_DEBUG=False."
+        )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -61,6 +74,13 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Safe defaults that do not depend on the hosting provider's HTTPS configuration.
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "same-origin"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
