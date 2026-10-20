@@ -106,7 +106,11 @@ class WritingAnalysisEndpointTests(TestCase):
 class ProductionSettingsTests(TestCase):
     def _load_settings_with_environment(self, overrides):
         env = os.environ.copy()
-        env.update(overrides)
+        for key, value in overrides.items():
+            if value is None:
+                env.pop(key, None)
+            else:
+                env[key] = value
         return subprocess.run(
             [sys.executable, "-c", "import config.settings"],
             env=env,
@@ -119,8 +123,8 @@ class ProductionSettingsTests(TestCase):
         env = {
             "DJANGO_DEBUG": "False",
             "DJANGO_ALLOWED_HOSTS": "example.com",
+            "DJANGO_SECRET_KEY": None,
         }
-        env.pop("DJANGO_SECRET_KEY", None)
         result = self._load_settings_with_environment(env)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("DJANGO_SECRET_KEY", result.stderr)
