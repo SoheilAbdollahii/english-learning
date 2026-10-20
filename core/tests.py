@@ -137,3 +137,12 @@ class ProductionSettingsTests(TestCase):
         })
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("DJANGO_ALLOWED_HOSTS", result.stderr)
+
+    def test_production_accepts_explicit_secret_and_hosts(self):
+        result = self._load_settings_with_environment({
+            "DJANGO_DEBUG": "False",
+            "DJANGO_SECRET_KEY": "test-only-secret-value-that-is-long-enough-for-settings-checks",
+            "DJANGO_ALLOWED_HOSTS": "example.com,api.example.com",
+            "DATABASE_URL": "",
+        })
+        self.assertEqual(result.returncode, 0, result.stderr)
