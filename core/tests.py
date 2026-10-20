@@ -1,4 +1,7 @@
 import json
+import os
+import subprocess
+import sys
 
 from django.test import TestCase
 
@@ -98,3 +101,35 @@ class WritingAnalysisEndpointTests(TestCase):
             [issue["start"] for issue in body["errors"]],
             sorted(issue["start"] for issue in body["errors"]),
         )
+
+
+class ProductionSettingsTests(TestCase):
+    def _load_settings_with_environment(self, overrides):
+        env = os.environ.copy()
+        env.update(overrides)
+        return subprocess.run(
+            [sys.executable, "-c", "import config.settings"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_production_rejects_default_secret_key(self):
+        env = {
+            "DJANGO_DEBUG": "False",
+            "DJANGO_ALLOWED_HOSTS": "example.com",
+        }
+        env.pop("DJANGO_SECRET_KEY", None)
+        result = self._load_settings_with_environment(env)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("DJANGO_SECRET_KEY", result.stderr)
+
+    def test_production_rejects_wildcard_allowed_hosts(self):
+        result = self._load_settings_with_environment({
+            "DJANGO_DEBUG": "False",
+            "DJANGO_SECRET_KEY": "test-only-secret-value",
+            "DJANGO_ALLOWED_HOSTS": "*",
+        })
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("DJANGO_ALLOWED_HOSTS", result.stderr)
